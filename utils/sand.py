@@ -36,6 +36,9 @@ def execute_code(code: str, df: pd.DataFrame):
         else:
             output["result"] = str(x)
 
+    except TimeoutError:
+        return {output["error"]: "Code execution timed out"}
+
     except Exception as e:
         output["error"]=str(e)
 
