@@ -1,24 +1,59 @@
 from fastapi import APIRouter, UploadFile, File
 from models.schemas import ChatRequest
-import calls, data
+import data
+import calls
+from calls import code_gen
 from utils.sand import execute_code
+from prompt import prompt
+import uuid
 
 
-upload = APIRouter(prefix="/upload", tags=["Upload"])
-
-@upload.post("/")
-async def upload_csv(file: UploadFile = File(...)):
-    file_id = await data.save_csv(file)
-    return {"message": "File uploaded successfully", "file_id": file_id}
-
+class CSVChatAPI:
+    def __init__(self):
+        # Routers
+        self.upload = APIRouter(prefix="/upload", tags=["Upload"])
+        self.chat = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-chat = APIRouter(prefix="/chat", tags=["Chat"])
+        # Route bindings
+        self.upload.post("/")(self.upload_csv)
+        self.chat.post("/")(self.chat_with_csv)
+        self.chat.get("/history/{user_id}")(self.get_chat_history)
+       
 
-@chat.post("/")
-async def chat_with_csv(request: ChatRequest):
-    df = data.get_csv(request.file_id)
-    code = await calls.generate_pandas_code(request.query, df)
-    print("Generated Code:", code)
-    output = execute_code(code, df)
-    return {"generated_code": code, "result": output["result"], "image": output["image"], "error": output["error"]}
+    # =====================================================
+    # 📂 Upload CSV
+    # =====================================================
+    async def upload_csv(self, file: UploadFile = File(...)):
+        file_id = await data.save_csv(file)
+        return {"message": "File uploaded successfully", "file_id": file_id}
+
+    # =====================================================
+    # 💬 Chat Endpoint
+    # =====================================================
+    async def chat_with_csv(self, request: ChatRequest):
+        df = data.get_csv(request.file_id)
+        bot = code_gen(user_id=request.user_id)
+
+        code, user_id = await bot.generate_code(request.query, df)
+        output = execute_code(code, df)
+
+        return {
+            "generated_code": code,
+            "result": output.get("result"),
+            "image": output.get("image"),
+            "error": output.get("error"),
+            "user_id": user_id,
+        }
+
+    # =====================================================
+    # 🧠 Get Chat History
+    # =====================================================
+    async def get_chat_history(self, user_id: str):
+        """
+        Returns the chat history for a specific user_id.
+        """
+        history, user_id = calls.get_user_history(user_id)
+        return {"user_id": user_id, "history": history}
+
+

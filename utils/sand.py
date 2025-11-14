@@ -15,9 +15,10 @@ def execute_code(code: str, df: pd.DataFrame):
         exec(code, safe_globals, safe_locals)
         plt = safe_locals.get("plt")
 
-        figs = [plt.figure(n) for n in plt.get_fignums()]
+        
 
-        if figs:
+        if plt:
+            figs = [plt.figure(n) for n in plt.get_fignums()]
             buf = io.BytesIO()
             figs[-1].savefig(buf, format="png", bbox_inches="tight")
             buf.seek(0)
@@ -26,13 +27,14 @@ def execute_code(code: str, df: pd.DataFrame):
             plt.close("all")
         
         # Safely extract result: Coerce scalars to strings to avoid downstream iteration errors
-        r = safe_locals.get("result")
-
+        x = safe_locals.get("result")
+        print(x)
+       
         # Convert DataFrame/Series to dict (for JSON serialization)
-        if hasattr(r, "to_dict"):
-            output["result"] = r.to_dict()
+        if hasattr(x, "to_dict"):
+            output["result"] = x.to_dict()
         else:
-            output["result"] = str(r)
+            output["result"] = str(x)
 
     except Exception as e:
         output["error"]=str(e)

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from route import chat, upload
+from route import CSVChatAPI
 
 app = FastAPI(title="AI CSV Analyzer API")
 
@@ -13,5 +13,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat)
-app.include_router(upload)
+api = CSVChatAPI()
+app.include_router(api.upload)
+app.include_router(api.chat)
