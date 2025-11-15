@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ChatRequest(BaseModel):
-    user_id: str  # 🆕 Add this field to identify the user/session
+    user_id: str  # Add this field to identify the user/session
     file_id: str  # Existing field (used to locate the uploaded CSV)
     query: str    # The user's natural language query
 
