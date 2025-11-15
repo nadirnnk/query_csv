@@ -10,17 +10,23 @@ import uuid
 
 
 load_dotenv()
-
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=os.getenv("OPENAI_API_KEY"))
-
-# global dictionary of sessions
 SESSION_STORE = {}
+FEEDBACK_STORE = {}  # Store feedback per user_id: {user_id: [feedback1, feedback2, ...]}
 
 def get_user_history(user_id: str) -> ChatMessageHistory:
     if user_id not in SESSION_STORE:
         user_id = str(uuid.uuid4())
         SESSION_STORE[user_id] = ChatMessageHistory()
     return SESSION_STORE[user_id], user_id
+
+def add_feedback(query: str, code, feedback):
+    """Store feedback (thumbs_up, thumbs_down, or None) for the last query/result pair."""
+    if query not in FEEDBACK_STORE:
+        FEEDBACK_STORE[query] = []
+    
+    FEEDBACK_STORE[query]= [code, feedback]
+    print("Storing feedback:", FEEDBACK_STORE)
 
 class code_gen:
     def __init__(self, user_id: str):
@@ -40,7 +46,6 @@ class code_gen:
         }
         user_content = f"User query: {query} DataFrame info: {info}"
         
-        # Add user message to history
         self.history.add_user_message(user_content)
         
         # Get full messages from history and invoke
@@ -54,10 +59,6 @@ class code_gen:
         elif "```" in generated_code:
             generated_code = generated_code.split("```")[1].split("```")[0].strip()
 
-        # Add assistant response to history
         self.history.add_ai_message(generated_code)
-        
-        print(self.history.messages)  # For debugging
-
 
         return generated_code, self.user_id

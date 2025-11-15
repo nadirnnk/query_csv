@@ -19,18 +19,20 @@ st.set_page_config(page_title="AI CSV Analyst", layout="wide")
 
 
 def get_chat_history(user_id):
-    """Fetch chat history from backend."""
+    """Fetch or create a new chat session from backend."""
     try:
-        response = requests.get(f"{BACKEND_URL}/chat/history/{user_id}", timeout=10)
+        # If user_id is None, create a new session by calling with 'new' or empty
+        session_id = user_id if user_id else "new"
+        response = requests.get(f"{BACKEND_URL}/chat/history/{session_id}", timeout=10)
         if response.status_code == 200:
-            his = response.json()
-            return his.get("user_id")
+            data = response.json()
+            return data.get("user_id")  # Returns the user_id (new or existing)
         else:
             st.warning("⚠️ Unable to fetch chat history.")
-            return []
-    except requests.exceptions.RequestException:
+            return None
+    except requests.exceptions.RequestException as e:
         st.warning("⚠️ Backend not reachable.")
-        return []
+        return None
 
 
 
@@ -83,7 +85,7 @@ def file_upload_interface():
                 except Exception as e:
                     st.error(f"⚠️ Error uploading file: {e}")
         else:
-            st.info(f"ℹ️ {uploaded_file.name} is already uploaded.")
+            st.info(f" {uploaded_file.name} is already uploaded.")
 
     # Display file selector if files are uploaded
     if st.session_state.uploaded_files:
@@ -124,7 +126,7 @@ def file_upload_interface():
     return None
 
 # ==========================================
-# 💬 Chat Interface
+#  Chat Interface
 # ==========================================
 def run_chat_interface(file_id, chat_name):
     """Display the chat interface for asking questions"""
@@ -158,31 +160,86 @@ def run_chat_interface(file_id, chat_name):
 
                     if response.status_code == 200:
                         data = response.json()
-
-                        st.write("### 🧩 Generated Code:")
-                        st.code(data.get("generated_code", "No code generated"), language="python")
-
-                        st.write("### 📊 Result:")
-
-                        result = data.get("result")
-                        image = data.get("image")
-                        error = data.get("error")
                         
-                        if result is not None:
-                            st.write(result)
-                        if image is not None:
-                            img_data = base64.b64decode(data["image"])
-                            image = Image.open(io.BytesIO(img_data))
-                            st.image(image, caption="Backend-generated plot")
-                        if error is not None:
-                            st.error(error)
+                        # Store result in session state so it persists
+                        st.session_state.last_result = data
                     else:
                         st.error(f"Backend error: {response.text}")
                 except Exception as e:
                     st.error(f"⚠️ Something went wrong: {e}")
+    
+    # Display results if they exist in session state
+    if "last_result" in st.session_state:
+        data = st.session_state.last_result
+        
+        st.write("### 🧩 Generated Code:")
+        st.code(data.get("generated_code", "No code generated"), language="python")
+
+        st.write("### 📊 Result:")
+
+        result = data.get("result")
+        image = data.get("image")
+        error = data.get("error")
+        
+        if result is not None:
+            st.write(result)
+        if image is not None:
+            try:
+                img_data = base64.b64decode(image)
+                image = Image.open(io.BytesIO(img_data))
+                st.image(image, caption="Generated plot")
+            except Exception:
+                st.error("Could not decode backend image")
+        if error is not None:
+            st.error(error)
+        
+        # =====================================================
+        # 👍 Feedback Section (OUTSIDE spinner, PERSISTS)
+        # =====================================================
+        st.markdown("---")
+        st.write("### 👍 Was this helpful?")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("👍 Thumbs Up"):
+                try:
+                    feedback_payload = {
+                        "query": query,
+                        "code": data.get("generated_code", ""),
+                        "feedback": "thumbs_up"
+                    }
+                    feedback_response = requests.post(
+                        f"{BACKEND_URL}/chat/feedback", 
+                        json=feedback_payload
+                    )
+                    if feedback_response.status_code == 200:
+                        st.success("✅ Thanks for your feedback!")
+                    else:
+                        st.error("Failed to submit feedback")
+                except Exception as e:
+                    st.error(f"Error submitting feedback: {e}")
+        
+        with col2:
+            if st.button("👎 Thumbs Down"):
+                try:
+                    feedback_payload = {
+                        "query": query,
+                        "code": data.get("generated_code", ""),
+                        "feedback": "thumbs_down"
+                    }
+                    feedback_response = requests.post(
+                        f"{BACKEND_URL}/chat/feedback", 
+                        json=feedback_payload
+                    )
+                    if feedback_response.status_code == 200:
+                        st.success("✅ Thanks for your feedback!")
+                    else:
+                        st.error("Failed to submit feedback")
+                except Exception as e:
+                    st.error(f"Error submitting feedback: {e}")
 
 # ==========================================
-# 🎯 Main Application Logic
+#  Main Application Logic
 # ==========================================
 
 # Initialize session state
@@ -250,7 +307,7 @@ if st.session_state.creating_new_chat:
                 st.session_state.creating_new_chat = False
                 st.rerun()
     else:
-        st.info("👆 Please upload a CSV file to continue")
+        st.info("Please upload a CSV file to continue")
         
         if st.button("❌ Cancel"):
             st.session_state.creating_new_chat = False
@@ -267,11 +324,11 @@ else:
     st.caption("Ask questions about your data in plain English — powered by OpenAI & FastAPI backend")
     st.markdown("---")
     
-    st.info("👈 Click **'➕ New Chat'** in the sidebar to get started!")
+    st.info("Click **'➕ New Chat'** in the sidebar to get started!")
     
     # Show a welcome message or instructions
     st.markdown("""
-    ### 🚀 Welcome to AI CSV Analyst!
+    ###  Welcome to AI CSV Analyst!
     
     **How to use:**
     1. Click "➕ New Chat" in the sidebar
@@ -286,7 +343,7 @@ else:
     """)
 
 # ==========================================
-# 🧹 Footer
+# Footer
 # ==========================================
 st.sidebar.markdown("---")
 st.sidebar.caption("Built with ❤️ using Streamlit + FastAPI + OpenAI")

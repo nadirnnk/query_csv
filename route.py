@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File
-from models.schemas import ChatRequest
+from models.schemas import ChatRequest, FeedbackRequest
 import data
 import calls
 from calls import code_gen
@@ -19,6 +19,7 @@ class CSVChatAPI:
         self.upload.post("/")(self.upload_csv)
         self.chat.post("/")(self.chat_with_csv)
         self.chat.get("/history/{user_id}")(self.get_chat_history)
+        self.chat.post("/feedback")(self.submit_feedback)
        
 
     # =====================================================
@@ -55,5 +56,17 @@ class CSVChatAPI:
         """
         history, user_id = calls.get_user_history(user_id)
         return {"user_id": user_id, "history": history}
+
+    # =====================================================
+    # 👍 Submit Feedback
+    # =====================================================
+    async def submit_feedback(self, request: FeedbackRequest):
+        """
+        Store thumbs up/down feedback for the last query/result pair.
+        feedback can be: 'thumbs_up', 'thumbs_down', or None
+        """
+        print(f"[FEEDBACK] Received feedback from user {request.query}: {request.code}, {request.feedback}")
+        calls.add_feedback(request.query, request.code, request.feedback)
+        return {"message": "Feedback received", "feedback": request.feedback}
 
 
