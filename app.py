@@ -6,14 +6,12 @@ import io
 from PIL import Image
 
 
-# ==========================================
-# 🚀 Configuration
-# ==========================================
+
+# Configuration
 BACKEND_URL = "http://127.0.0.1:8000"
 
-# ==========================================
-# 🧠 Streamlit Page Setup
-# ==========================================
+
+#  Streamlit Page Setup
 st.set_page_config(page_title="AI CSV Analyst", layout="wide")
 
 
@@ -28,19 +26,19 @@ def get_chat_history(user_id):
             data = response.json()
             return data.get("user_id")  # Returns the user_id (new or existing)
         else:
-            st.warning("⚠️ Unable to fetch chat history.")
+            st.warning("Unable to fetch chat history.")
             return None
     except requests.exceptions.RequestException as e:
-        st.warning("⚠️ Backend not reachable.")
+        st.warning("Backend not reachable.")
         return None
 
 
 
 
 
-# ==========================================
-# 📤 File Upload Function
-# ==========================================
+
+# File Upload Function
+
 def file_upload_interface():
     """Returns file_id if a file is uploaded and selected, None otherwise"""
     
@@ -78,12 +76,12 @@ def file_upload_interface():
                         }
                         
                         st.session_state.selected_file_id = file_id
-                        st.success(f"✅ {uploaded_file.name} uploaded successfully!")
+                        st.success(f"{uploaded_file.name} uploaded successfully!")
                         st.rerun()
                     else:
-                        st.error(f"❌ Upload failed: {response.text}")
+                        st.error(f"Upload failed: {response.text}")
                 except Exception as e:
-                    st.error(f"⚠️ Error uploading file: {e}")
+                    st.error(f"Error uploading file: {e}")
         else:
             st.info(f" {uploaded_file.name} is already uploaded.")
 
@@ -125,9 +123,8 @@ def file_upload_interface():
     
     return None
 
-# ==========================================
+
 #  Chat Interface
-# ==========================================
 def run_chat_interface(file_id, chat_name):
     """Display the chat interface for asking questions"""
     
@@ -172,7 +169,7 @@ def run_chat_interface(file_id, chat_name):
     if "last_result" in st.session_state:
         data = st.session_state.last_result
         
-        st.write("### 🧩 Generated Code:")
+        st.write("###Generated Code:")
         st.code(data.get("generated_code", "No code generated"), language="python")
 
         st.write("### 📊 Result:")
@@ -193,9 +190,7 @@ def run_chat_interface(file_id, chat_name):
         if error is not None:
             st.error(error)
         
-        # =====================================================
-        # 👍 Feedback Section (OUTSIDE spinner, PERSISTS)
-        # =====================================================
+       
         st.markdown("---")
         st.write("### 👍 Was this helpful?")
         
@@ -213,7 +208,7 @@ def run_chat_interface(file_id, chat_name):
                         json=feedback_payload
                     )
                     if feedback_response.status_code == 200:
-                        st.success("✅ Thanks for your feedback!")
+                        st.success("Thanks for your feedback!")
                     else:
                         st.error("Failed to submit feedback")
                 except Exception as e:
@@ -232,15 +227,14 @@ def run_chat_interface(file_id, chat_name):
                         json=feedback_payload
                     )
                     if feedback_response.status_code == 200:
-                        st.success("✅ Thanks for your feedback!")
+                        st.success("Thanks for your feedback!")
                     else:
                         st.error("Failed to submit feedback")
                 except Exception as e:
                     st.error(f"Error submitting feedback: {e}")
 
-# ==========================================
+
 #  Main Application Logic
-# ==========================================
 
 # Initialize session state
 if "chat_sessions" not in st.session_state:
@@ -250,9 +244,9 @@ if "user_id" not in st.session_state:
 if "creating_new_chat" not in st.session_state:
     st.session_state.creating_new_chat = False
 
-# ==========================================
-# 📱 Sidebar
-# ==========================================
+
+# Sidebar
+
 st.sidebar.title("💬 Chat Sessions")
 
 # New Chat Button
@@ -275,9 +269,9 @@ if st.session_state.chat_sessions:
             st.session_state.creating_new_chat = False
             st.rerun()
 
-# ==========================================
-# 🖥️ Main Content Area
-# ==========================================
+
+# Main Content Area
+
 
 # Case 1: Creating a new chat
 if st.session_state.creating_new_chat:
@@ -342,8 +336,3 @@ else:
     - "What are the top 5 customers by purchase amount?"
     """)
 
-# ==========================================
-# Footer
-# ==========================================
-st.sidebar.markdown("---")
-st.sidebar.caption("Built with ❤️ using Streamlit + FastAPI + OpenAI")
