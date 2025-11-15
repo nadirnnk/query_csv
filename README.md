@@ -38,17 +38,19 @@ python -m venv .venv
 pip install --upgrade pip
 ```
 
-Or using conda (you used `test` earlier):
+Or using conda:
 
 ```powershell
-conda create -n test python=3.11 -y
-conda activate test
+conda create -n <env_name> python=3.11 -y
+conda activate <env_name>
 ```
 
-2. Install dependencies (create a `requirements.txt` if you prefer). Minimal packages required:
+2. Install dependencies
+
+Run requirements.txt from your project folder.
 
 ```powershell
-pip install fastapi uvicorn[standard] streamlit pandas python-multipart pydantic python-dotenv requests pillow pytest
+pip install -r requirements.txt
 ```
 
 3. Set environment variables (required):
@@ -76,4 +78,5 @@ streamlit run app.py
 - POST `/upload` — multipart file upload (returns `file_id`)
 - POST `/chat` — body: `{ user_id, file_id, query }` — returns generated code, result, image, error, and user_id
 - GET `/chat/history/{user_id}` — returns in-memory chat history for that `user_id`
+- POST `/chat/feedback` — body: `{ query, code, feedback }` — returns generated code, result, image, error, and user_id
 
