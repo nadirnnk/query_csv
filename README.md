@@ -11,7 +11,7 @@ A small prototype that lets a user upload a CSV, ask natural-language questions 
 - Execute generated code against the DataFrame and return numeric results and optional plot images
 - Session/chat history (in-memory) so the LLM has conversation context
 
-## Repo layout (important files)
+## Repo layout
 
 - `app.py` — Streamlit frontend (demo + manual testing UI)
 - `main.py` — FastAPI application bootstrap
@@ -22,7 +22,7 @@ A small prototype that lets a user upload a CSV, ask natural-language questions 
 - `models/schemas.py` — Pydantic request/response schemas
 - `storage/uploads/` — uploaded CSVs (UUID.csv)
 
-## Quick design contract (2–3 bullets)
+## Quick design contract
 
 - Input: CSV file and a natural-language query + user_id
 - Output: Generated python code, numeric result (or error), and optional plot image (base64)
